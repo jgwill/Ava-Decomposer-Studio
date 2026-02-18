@@ -11,16 +11,26 @@ export interface ModuleStatus {
   version?: string;
 }
 
+export type EngineType = 'langgraph' | 'langchain';
+
 /**
  * Fallback implementation using direct Gemini 3 Pro calls.
  */
-const fallbackDecompose = async (prompt: string): Promise<DecompositionPlan> => {
+const fallbackDecompose = async (prompt: string, engineType: EngineType): Promise<DecompositionPlan> => {
+  const enginePersona = engineType === 'langgraph' 
+    ? "Ava LangGraph Engine (Stateful, Cyclic, Actor-based)" 
+    : "Ava LangChain Engine (Linear, Chain-based, Traceable)";
+
+  const styleInstruction = engineType === 'langgraph'
+    ? "Focus on identifying independent actors, complex dependencies, and potential feedback loops."
+    : "Focus on a clear, step-by-step linear chain of thought decomposition.";
+
   try {
     const response = await ai.models.generateContent({
       model: DECOMPOSITION_MODEL,
-      contents: `You are the Ava LangGraph Prompt Decomposition Engine. 
+      contents: `You are the ${enginePersona}. 
       Your goal is to break down the following complex user prompt into a series of atomic, executable sub-tasks.
-      Identify dependencies between tasks where necessary.
+      ${styleInstruction}
       
       User Prompt: "${prompt}"`,
       config: {
@@ -29,7 +39,7 @@ const fallbackDecompose = async (prompt: string): Promise<DecompositionPlan> => 
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            reasoning: { type: Type.STRING, description: "High-level strategy for the breakdown" },
+            reasoning: { type: Type.STRING, description: `High-level strategy using ${engineType} architecture` },
             tasks: {
               type: Type.ARRAY,
               items: {
@@ -100,41 +110,38 @@ export const loadAvaModules = async (): Promise<ModuleStatus[]> => {
   return results;
 };
 
-export const decomposePrompt = async (prompt: string): Promise<DecompositionPlan> => {
+export const decomposePrompt = async (prompt: string, engineType: EngineType = 'langgraph'): Promise<DecompositionPlan> => {
+  const packageName = engineType === 'langgraph' 
+    ? "ava-langgraph-prompt-decomposition-engine"
+    : "ava-langchain-prompt-decomposition";
+
   try {
     // Attempt to use the installed package
     // @ts-ignore
-    const module = await import("ava-langgraph-prompt-decomposition-engine");
+    const module = await import(packageName);
     
     // Check if the expected engine class is exported
     // Fallback to DecompositionGraph if default is not available
-    const EngineClass = module.default || module.DecompositionGraph;
+    const EngineClass = module.default || module.DecompositionGraph || module.ChainDecomposer;
     
     if (EngineClass) {
         const engine = new EngineClass({ apiKey: process.env.API_KEY });
         
-        console.log("Using Ava LangGraph Engine for decomposition...");
+        console.log(`Using ${engineType} Engine for decomposition...`);
         
-        // Hypothetically using narrative intelligence if available
-        try {
-            // @ts-ignore
-            const narrativeModule = await import("ava-langgraph-narrative-intelligence");
-            if (narrativeModule) console.log("Narrative Intelligence active");
-        } catch(e) {}
-
         const result = await engine.decompose(prompt);
         
         return {
           originalPrompt: prompt,
           tasks: result.tasks,
-          reasoning: result.reasoning || "Processed by Ava LangGraph Engine with Relational Intelligence"
+          reasoning: result.reasoning || `Processed by ${engineType} Engine`
         };
     }
     
     throw new Error("Engine export not found in package");
 
   } catch (error) {
-    console.warn("Primary engine load failed, switching to Gemini Fallback:", error);
-    return fallbackDecompose(prompt);
+    console.warn(`Primary engine (${packageName}) load failed, switching to Gemini Fallback:`, error);
+    return fallbackDecompose(prompt, engineType);
   }
 };

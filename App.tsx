@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Layers, Play, RefreshCw, Zap, Sparkles, Box, BrainCircuit, Share2 } from 'lucide-react';
-import { decomposePrompt, loadAvaModules, ModuleStatus as IModuleStatus } from './services/decompositionEngine';
+import { Layers, Play, RefreshCw, Zap, Sparkles, Box, BrainCircuit, Share2, Workflow, Link as LinkIcon } from 'lucide-react';
+import { decomposePrompt, loadAvaModules, ModuleStatus as IModuleStatus, EngineType } from './services/decompositionEngine';
 import { executeTask } from './services/executionService';
 import { DecompositionPlan, ExecutionResult, TaskStatus } from './types';
 import { PlanVisualization } from './components/PlanVisualization';
@@ -16,6 +16,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [modules, setModules] = useState<IModuleStatus[]>([]);
   const [loadingModules, setLoadingModules] = useState(true);
+  const [selectedEngine, setSelectedEngine] = useState<EngineType>('langgraph');
 
   // Load modules on mount
   useEffect(() => {
@@ -36,7 +37,7 @@ const App: React.FC = () => {
     setExecutionResults({});
     
     try {
-      const newPlan = await decomposePrompt(prompt);
+      const newPlan = await decomposePrompt(prompt, selectedEngine);
       setPlan(newPlan);
     } catch (e: any) {
       setError(e.message || "Failed to decompose prompt");
@@ -158,12 +159,42 @@ const App: React.FC = () => {
                 <section className="mb-12 text-center lg:text-left">
                 <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Decompose Complex Goals</h2>
                 <p className="text-gray-400 mb-8 text-lg max-w-2xl">
-                    Transform high-level prompts into actionable, dependency-aware execution graphs using the full Ava Intelligence Suite.
+                    Transform high-level prompts into actionable, dependency-aware execution graphs.
                 </p>
                 
                 <div className="relative group max-w-4xl">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl opacity-30 group-hover:opacity-50 blur transition duration-500"></div>
                     <div className="relative bg-gray-900 rounded-2xl border border-gray-800 p-2">
+                    
+                    {/* Engine Selector */}
+                    <div className="flex items-center justify-end px-4 py-2 border-b border-gray-800/50 space-x-4">
+                        <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Engine:</span>
+                        <div className="flex bg-gray-950 p-1 rounded-lg border border-gray-800">
+                             <button
+                                onClick={() => setSelectedEngine('langgraph')}
+                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                    selectedEngine === 'langgraph' 
+                                    ? 'bg-blue-900/40 text-blue-300 shadow-sm' 
+                                    : 'text-gray-500 hover:text-gray-300'
+                                }`}
+                             >
+                                <Workflow className="w-3.5 h-3.5" />
+                                <span>LangGraph</span>
+                             </button>
+                             <button
+                                onClick={() => setSelectedEngine('langchain')}
+                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                    selectedEngine === 'langchain' 
+                                    ? 'bg-purple-900/40 text-purple-300 shadow-sm' 
+                                    : 'text-gray-500 hover:text-gray-300'
+                                }`}
+                             >
+                                <LinkIcon className="w-3.5 h-3.5" />
+                                <span>LangChain</span>
+                             </button>
+                        </div>
+                    </div>
+
                     <textarea
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
