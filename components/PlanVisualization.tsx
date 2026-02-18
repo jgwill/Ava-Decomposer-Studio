@@ -2,12 +2,13 @@ import React from 'react';
 import { DecompositionTask, TaskStatus, ExecutionResult, TaskType } from '../types';
 import { 
   CheckCircle2, Circle, Clock, AlertCircle, ArrowDown, Cpu, 
-  Search, Brain, Code, PenTool, ClipboardCheck, Wrench
+  Search, Brain, Code, PenTool, ClipboardCheck, Wrench, Play
 } from 'lucide-react';
 
 interface PlanVisualizationProps {
   tasks: DecompositionTask[];
   executionResults: Record<string, ExecutionResult>;
+  onExecuteTask: (taskId: string) => void;
 }
 
 const StatusIcon = ({ status }: { status?: TaskStatus }) => {
@@ -53,7 +54,7 @@ const TaskTypeBadge = ({ type }: { type: TaskType }) => {
   );
 };
 
-export const PlanVisualization: React.FC<PlanVisualizationProps> = ({ tasks, executionResults }) => {
+export const PlanVisualization: React.FC<PlanVisualizationProps> = ({ tasks, executionResults, onExecuteTask }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center space-x-2 mb-6">
@@ -68,6 +69,14 @@ export const PlanVisualization: React.FC<PlanVisualizationProps> = ({ tasks, exe
           const result = executionResults[task.id];
           const isLast = index === tasks.length - 1;
           const status = result?.status || TaskStatus.PENDING;
+          
+          // Check if dependencies are met
+          const dependenciesMet = task.dependencies.every(depId => 
+             executionResults[depId]?.status === TaskStatus.COMPLETED
+          );
+          
+          const isRunning = status === TaskStatus.RUNNING;
+          const isCompleted = status === TaskStatus.COMPLETED;
 
           return (
             <div key={task.id} className="relative pl-8 pb-8">
@@ -78,8 +87,8 @@ export const PlanVisualization: React.FC<PlanVisualizationProps> = ({ tasks, exe
               
               {/* Node Point */}
               <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center bg-gray-900 border-2 transition-colors duration-300 z-10 ${
-                status === TaskStatus.COMPLETED ? 'border-green-500/50 bg-green-900/20' : 
-                status === TaskStatus.RUNNING ? 'border-blue-500 bg-blue-900/20' : 
+                isCompleted ? 'border-green-500/50 bg-green-900/20' : 
+                isRunning ? 'border-blue-500 bg-blue-900/20' : 
                 'border-gray-700'
               }`}>
                 <span className="text-[10px] font-mono text-gray-500">{index + 1}</span>
@@ -88,8 +97,8 @@ export const PlanVisualization: React.FC<PlanVisualizationProps> = ({ tasks, exe
               {/* Card */}
               <div className={`
                 relative p-4 rounded-xl border transition-all duration-300 group
-                ${status === TaskStatus.RUNNING ? 'bg-gray-800/80 border-blue-500/50 shadow-lg shadow-blue-500/10' : 
-                  status === TaskStatus.COMPLETED ? 'bg-gray-800/50 border-green-500/30' : 
+                ${isRunning ? 'bg-gray-800/80 border-blue-500/50 shadow-lg shadow-blue-500/10' : 
+                  isCompleted ? 'bg-gray-800/50 border-green-500/30' : 
                   'bg-gray-900/60 border-gray-800 hover:border-gray-700'}
               `}>
                 {/* Header Row */}
@@ -100,7 +109,25 @@ export const PlanVisualization: React.FC<PlanVisualizationProps> = ({ tasks, exe
                         <TaskTypeBadge type={task.taskType || 'reasoning'} />
                      </div>
                   </div>
-                  <StatusIcon status={status} />
+                  
+                  {/* Action or Status */}
+                  <div className="flex items-center space-x-3">
+                    {!isCompleted && !isRunning && (
+                        <button
+                            onClick={() => onExecuteTask(task.id)}
+                            disabled={!dependenciesMet}
+                            className={`flex items-center space-x-1 px-2 py-1 rounded text-[10px] font-medium transition-all uppercase tracking-wide border
+                                ${dependenciesMet 
+                                    ? 'bg-blue-600/10 text-blue-400 border-blue-500/30 hover:bg-blue-600/20 hover:border-blue-500/50' 
+                                    : 'bg-gray-800/50 text-gray-600 border-gray-800 cursor-not-allowed'}
+                            `}
+                        >
+                            <Play className="w-3 h-3 mr-1" />
+                            Run
+                        </button>
+                    )}
+                    <StatusIcon status={status} />
+                  </div>
                 </div>
                 
                 {/* Description */}
@@ -142,8 +169,8 @@ export const PlanVisualization: React.FC<PlanVisualizationProps> = ({ tasks, exe
                 {/* Dependencies */}
                 {task.dependencies.length > 0 && (
                   <div className="mt-2 flex items-center space-x-2 text-xs text-gray-600">
-                    <ArrowDown className="w-3 h-3" />
-                    <span>Waits for: {task.dependencies.join(', ')}</span>
+                    <ArrowDown className={`w-3 h-3 ${dependenciesMet ? 'text-green-500/50' : 'text-gray-600'}`} />
+                    <span className={dependenciesMet ? 'text-green-500/50' : ''}>Waits for: {task.dependencies.join(', ')}</span>
                   </div>
                 )}
               </div>

@@ -46,6 +46,49 @@ const App: React.FC = () => {
     }
   };
 
+  const handleSingleTaskExecution = useCallback(async (taskId: string) => {
+    if (!plan) return;
+    const task = plan.tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // Set Running
+    setExecutionResults(prev => ({
+      ...prev,
+      [taskId]: { taskId, status: TaskStatus.RUNNING, startedAt: Date.now() }
+    }));
+
+    // Build Context from all currently completed tasks
+    // We use a functional update pattern or read from the state variable which is a dependency
+    const currentContext = Object.values(executionResults)
+        .filter(r => r.status === TaskStatus.COMPLETED && r.output)
+        .map(r => `[Output from Task ${r.taskId}]:\n${r.output}`)
+        .join('\n\n');
+
+    try {
+        const output = await executeTask(task.title, task.description, currentContext);
+        
+        setExecutionResults(prev => ({
+          ...prev,
+          [taskId]: { 
+            taskId, 
+            status: TaskStatus.COMPLETED, 
+            output, 
+            completedAt: Date.now() 
+          }
+        }));
+    } catch (e: any) {
+        setExecutionResults(prev => ({
+          ...prev,
+          [taskId]: { 
+            taskId, 
+            status: TaskStatus.FAILED, 
+            error: e.message, 
+            completedAt: Date.now() 
+          }
+        }));
+    }
+  }, [plan, executionResults]);
+
   const handleExecute = useCallback(async () => {
     if (!plan) return;
     
@@ -250,7 +293,11 @@ const App: React.FC = () => {
                         </div>
 
                         <div className="bg-gray-950 rounded-2xl border border-gray-800 p-6">
-                           <PlanVisualization tasks={plan.tasks} executionResults={executionResults} />
+                           <PlanVisualization 
+                              tasks={plan.tasks} 
+                              executionResults={executionResults} 
+                              onExecuteTask={handleSingleTaskExecution}
+                           />
                         </div>
 
                         <div className="bg-gray-950 rounded-2xl border border-gray-800 h-full min-h-[500px] flex flex-col">
