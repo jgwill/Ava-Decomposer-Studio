@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Layers, Play, RefreshCw, Zap, Sparkles } from 'lucide-react';
+import { Layers, Play, RefreshCw, Zap, Sparkles, Box } from 'lucide-react';
 import { decomposePrompt } from './services/decompositionEngine';
 import { executeTask } from './services/executionService';
 import { DecompositionPlan, ExecutionResult, TaskStatus } from './types';
@@ -98,14 +98,11 @@ const App: React.FC = () => {
             </h1>
           </div>
           <div className="flex items-center space-x-4">
-            <a 
-              href="#" 
-              className="text-xs font-mono text-gray-500 hover:text-gray-300 transition-colors"
-              onClick={(e) => { e.preventDefault(); alert("Use: npm install ava-langgraph-prompt-decomposition-engine@0.1.1"); }}
-            >
-              npm install ava-langgraph-prompt-decomposition-engine@0.1.1
-            </a>
-            <div className="h-4 w-px bg-gray-800"></div>
+             <div className="hidden md:flex items-center space-x-2 px-3 py-1 rounded-md bg-gray-900 border border-gray-800">
+              <Box className="w-3.5 h-3.5 text-gray-400" />
+              <span className="text-xs font-mono text-gray-400">ava-langgraph-prompt-decomposition-engine@0.1.1</span>
+            </div>
+            <div className="h-4 w-px bg-gray-800 hidden md:block"></div>
             <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-900/20 border border-blue-900/50">
               <Sparkles className="w-3 h-3 text-blue-400" />
               <span className="text-xs text-blue-300 font-medium">Gemini 3 Pro</span>

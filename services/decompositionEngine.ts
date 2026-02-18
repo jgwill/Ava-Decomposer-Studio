@@ -3,17 +3,11 @@ import { DecompositionPlan, DecompositionTask } from '../types';
 import { Type } from "@google/genai";
 
 /**
- * NOTE: In a production environment with the actual package installed, 
- * you would import the engine as follows:
- * 
- * import { decompose } from 'ava-langgraph-prompt-decomposition-engine';
- * 
- * Since this is a web demo, we implement the decomposition logic using 
- * Gemini 3 Pro to simulate the engine's capability of breaking down 
- * complex prompts into directed acyclic graphs (DAGs) of tasks.
+ * Fallback implementation using direct Gemini 3 Pro calls.
+ * This ensures the app remains functional if the external package
+ * encounters loading issues in the browser environment.
  */
-
-export const decomposePrompt = async (prompt: string): Promise<DecompositionPlan> => {
+const fallbackDecompose = async (prompt: string): Promise<DecompositionPlan> => {
   try {
     const response = await ai.models.generateContent({
       model: DECOMPOSITION_MODEL,
@@ -23,7 +17,7 @@ export const decomposePrompt = async (prompt: string): Promise<DecompositionPlan
       
       User Prompt: "${prompt}"`,
       config: {
-        thinkingConfig: { thinkingBudget: 2048 }, // Enable thinking for better planning
+        thinkingConfig: { thinkingBudget: 2048 },
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -65,7 +59,37 @@ export const decomposePrompt = async (prompt: string): Promise<DecompositionPlan
     throw new Error("Empty response from decomposition engine.");
 
   } catch (error) {
-    console.error("Decomposition failed:", error);
+    console.error("Fallback decomposition failed:", error);
     throw new Error("Failed to decompose prompt. Please try again.");
+  }
+};
+
+export const decomposePrompt = async (prompt: string): Promise<DecompositionPlan> => {
+  try {
+    // Attempt to use the installed package
+    // We use dynamic import to robustly handle the dependency loading
+    // @ts-ignore
+    const module = await import("ava-langgraph-prompt-decomposition-engine");
+    
+    // Check if the expected engine class is exported
+    if (module && (module.AvaGraphEngine || module.default)) {
+        const EngineClass = module.AvaGraphEngine || module.default;
+        const engine = new EngineClass({ apiKey: process.env.API_KEY });
+        
+        console.log("Using Ava LangGraph Engine for decomposition...");
+        const result = await engine.decompose(prompt);
+        
+        return {
+          originalPrompt: prompt,
+          tasks: result.tasks,
+          reasoning: result.reasoning || "Processed by Ava LangGraph Engine"
+        };
+    }
+    
+    throw new Error("Engine export not found in package");
+
+  } catch (error) {
+    console.warn("Primary engine load failed, switching to Gemini Fallback:", error);
+    return fallbackDecompose(prompt);
   }
 };
