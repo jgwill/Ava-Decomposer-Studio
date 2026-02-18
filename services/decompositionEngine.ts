@@ -18,8 +18,8 @@ export type EngineType = 'langgraph' | 'langchain';
  */
 const fallbackDecompose = async (prompt: string, engineType: EngineType): Promise<DecompositionPlan> => {
   const enginePersona = engineType === 'langgraph' 
-    ? "Ava LangGraph Engine (Stateful, Cyclic, Actor-based)" 
-    : "Ava LangChain Engine (Linear, Chain-based, Traceable)";
+    ? "Ava LangGraph Engine v0.1.2 (Stateful, Cyclic, Actor-based)" 
+    : "Ava LangChain Engine v0.1.2 (Linear, Chain-based, Traceable)";
 
   const styleInstruction = engineType === 'langgraph'
     ? "Focus on identifying independent actors, complex dependencies, and potential feedback loops."
@@ -53,9 +53,23 @@ const fallbackDecompose = async (prompt: string, engineType: EngineType): Promis
                     items: { type: Type.STRING },
                     description: "List of task IDs that must be completed before this one."
                   },
-                  estimatedComplexity: { type: Type.STRING, enum: ["Low", "Medium", "High"] }
+                  estimatedComplexity: { type: Type.STRING, enum: ["Low", "Medium", "High"] },
+                  taskType: { 
+                    type: Type.STRING, 
+                    enum: ["research", "reasoning", "coding", "creative", "review"],
+                    description: "The primary nature of this task."
+                  },
+                  recommendedTools: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING },
+                    description: "Suggested tools to accomplish this task (e.g. 'Search', 'Calculator', 'Code Interpreter')"
+                  },
+                  reasoningStrategy: {
+                    type: Type.STRING,
+                    description: "A brief note on the strategic purpose of this task."
+                  }
                 },
-                required: ["id", "title", "description", "dependencies", "estimatedComplexity"]
+                required: ["id", "title", "description", "dependencies", "estimatedComplexity", "taskType", "reasoningStrategy"]
               }
             }
           },
@@ -86,24 +100,21 @@ const fallbackDecompose = async (prompt: string, engineType: EngineType): Promis
  */
 export const loadAvaModules = async (): Promise<ModuleStatus[]> => {
   const modules = [
-    'ava-langgraph-prompt-decomposition-engine',
-    'ava-langgraph-narrative-intelligence',
-    'ava-langchain-relational-intelligence',
-    'ava-langchain-prompt-decomposition',
-    'ava-langchain-narrative-tracing'
+    { name: 'ava-langgraph-prompt-decomposition-engine', version: '0.1.2' },
+    { name: 'ava-langchain-prompt-decomposition', version: '0.1.2' },
+    { name: 'ava-langgraph-narrative-intelligence', version: '0.1.1' },
+    { name: 'ava-langchain-relational-intelligence', version: '0.1.1' },
+    { name: 'ava-langchain-narrative-tracing', version: '0.1.1' }
   ];
 
-  const results = await Promise.all(modules.map(async (name) => {
+  const results = await Promise.all(modules.map(async (mod) => {
     try {
         // @ts-ignore
-        await import(name);
-        return { name, status: 'active' as const, version: '0.1.1' };
+        await import(mod.name);
+        return { name: mod.name, status: 'active' as const, version: mod.version };
     } catch (e) {
-        // In a real env without these packages, this will error. 
-        // For the demo, we might want to simulate 'active' if we are pretending, 
-        // but let's be honest about the load status.
-        console.warn(`Failed to load ${name}`, e);
-        return { name, status: 'error' as const };
+        console.warn(`Failed to load ${mod.name}`, e);
+        return { name: mod.name, status: 'error' as const };
     }
   }));
 

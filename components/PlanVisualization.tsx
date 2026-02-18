@@ -1,6 +1,9 @@
 import React from 'react';
-import { DecompositionTask, TaskStatus, ExecutionResult } from '../types';
-import { CheckCircle2, Circle, Clock, AlertCircle, ArrowDown, Cpu } from 'lucide-react';
+import { DecompositionTask, TaskStatus, ExecutionResult, TaskType } from '../types';
+import { 
+  CheckCircle2, Circle, Clock, AlertCircle, ArrowDown, Cpu, 
+  Search, Brain, Code, PenTool, ClipboardCheck, Wrench
+} from 'lucide-react';
 
 interface PlanVisualizationProps {
   tasks: DecompositionTask[];
@@ -20,13 +23,43 @@ const StatusIcon = ({ status }: { status?: TaskStatus }) => {
   }
 };
 
+const TaskTypeIcon = ({ type }: { type: TaskType }) => {
+  switch (type) {
+    case 'research': return <Search className="w-3.5 h-3.5" />;
+    case 'reasoning': return <Brain className="w-3.5 h-3.5" />;
+    case 'coding': return <Code className="w-3.5 h-3.5" />;
+    case 'creative': return <PenTool className="w-3.5 h-3.5" />;
+    case 'review': return <ClipboardCheck className="w-3.5 h-3.5" />;
+    default: return <Brain className="w-3.5 h-3.5" />;
+  }
+};
+
+const TaskTypeBadge = ({ type }: { type: TaskType }) => {
+  const colors = {
+    research: 'text-sky-300 bg-sky-950/40 border-sky-800/50',
+    reasoning: 'text-purple-300 bg-purple-950/40 border-purple-800/50',
+    coding: 'text-amber-300 bg-amber-950/40 border-amber-800/50',
+    creative: 'text-pink-300 bg-pink-950/40 border-pink-800/50',
+    review: 'text-emerald-300 bg-emerald-950/40 border-emerald-800/50',
+  };
+
+  const style = colors[type] || colors.reasoning;
+
+  return (
+    <span className={`flex items-center space-x-1.5 px-2 py-0.5 rounded text-[10px] font-medium border ${style} uppercase tracking-wider`}>
+      <TaskTypeIcon type={type} />
+      <span>{type}</span>
+    </span>
+  );
+};
+
 export const PlanVisualization: React.FC<PlanVisualizationProps> = ({ tasks, executionResults }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center space-x-2 mb-6">
-        <h2 className="text-xl font-semibold text-white">Decomposition Plan</h2>
+        <h2 className="text-xl font-semibold text-white">Decomposition Plan <span className="text-gray-500 font-normal text-sm ml-2">v0.1.2</span></h2>
         <span className="px-2 py-0.5 rounded-full bg-blue-900/30 text-blue-400 text-xs font-mono border border-blue-800">
-          {tasks.length} Steps
+          {tasks.length} Nodes
         </span>
       </div>
 
@@ -40,7 +73,7 @@ export const PlanVisualization: React.FC<PlanVisualizationProps> = ({ tasks, exe
             <div key={task.id} className="relative pl-8 pb-8">
               {/* Connecting Line */}
               {!isLast && (
-                <div className="absolute left-[11px] top-8 bottom-0 w-0.5 bg-gray-800" />
+                <div className="absolute left-[11px] top-8 bottom-0 w-0.5 bg-gray-800/60" />
               )}
               
               {/* Node Point */}
@@ -49,36 +82,68 @@ export const PlanVisualization: React.FC<PlanVisualizationProps> = ({ tasks, exe
                 status === TaskStatus.RUNNING ? 'border-blue-500 bg-blue-900/20' : 
                 'border-gray-700'
               }`}>
-                {index + 1}
+                <span className="text-[10px] font-mono text-gray-500">{index + 1}</span>
               </div>
 
               {/* Card */}
               <div className={`
-                relative p-4 rounded-xl border transition-all duration-300
+                relative p-4 rounded-xl border transition-all duration-300 group
                 ${status === TaskStatus.RUNNING ? 'bg-gray-800/80 border-blue-500/50 shadow-lg shadow-blue-500/10' : 
                   status === TaskStatus.COMPLETED ? 'bg-gray-800/50 border-green-500/30' : 
-                  'bg-gray-900 border-gray-800 hover:border-gray-700'}
+                  'bg-gray-900/60 border-gray-800 hover:border-gray-700'}
               `}>
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center space-x-2">
-                    <h3 className="font-medium text-gray-200">{task.title}</h3>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider ${
-                      task.estimatedComplexity === 'High' ? 'text-orange-400 bg-orange-950/30' :
-                      task.estimatedComplexity === 'Medium' ? 'text-yellow-400 bg-yellow-950/30' :
-                      'text-emerald-400 bg-emerald-950/30'
-                    }`}>
-                      {task.estimatedComplexity}
-                    </span>
+                {/* Header Row */}
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex flex-col space-y-2">
+                     <div className="flex items-center space-x-2">
+                        <h3 className="font-medium text-gray-200">{task.title}</h3>
+                        <TaskTypeBadge type={task.taskType || 'reasoning'} />
+                     </div>
                   </div>
                   <StatusIcon status={status} />
                 </div>
                 
-                <p className="text-sm text-gray-400 mb-3">{task.description}</p>
+                {/* Description */}
+                <p className="text-sm text-gray-400 mb-3 leading-relaxed">{task.description}</p>
                 
+                {/* Meta Row */}
+                <div className="flex flex-wrap gap-2 items-center pt-3 border-t border-gray-800/50">
+                   
+                   {/* Tools */}
+                   {task.recommendedTools && task.recommendedTools.length > 0 && (
+                     <div className="flex items-center space-x-1.5">
+                        <Wrench className="w-3 h-3 text-gray-500" />
+                        {task.recommendedTools.map(tool => (
+                            <span key={tool} className="text-[10px] px-1.5 py-0.5 bg-gray-800 text-gray-400 rounded border border-gray-700">
+                                {tool}
+                            </span>
+                        ))}
+                     </div>
+                   )}
+                   
+                   {/* Complexity */}
+                   <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider ml-auto ${
+                      task.estimatedComplexity === 'High' ? 'text-orange-400 bg-orange-950/30' :
+                      task.estimatedComplexity === 'Medium' ? 'text-yellow-400 bg-yellow-950/30' :
+                      'text-emerald-400 bg-emerald-950/30'
+                    }`}>
+                      {task.estimatedComplexity} Complexity
+                    </span>
+                </div>
+
+                {/* Strategy Note (New in 0.1.2) */}
+                {task.reasoningStrategy && (
+                  <div className="mt-3 text-xs text-gray-500 italic flex items-start space-x-1.5">
+                    <span className="opacity-50">Strategy:</span>
+                    <span>{task.reasoningStrategy}</span>
+                  </div>
+                )}
+                
+                {/* Dependencies */}
                 {task.dependencies.length > 0 && (
-                  <div className="flex items-center space-x-2 text-xs text-gray-500">
+                  <div className="mt-2 flex items-center space-x-2 text-xs text-gray-600">
                     <ArrowDown className="w-3 h-3" />
-                    <span>Depends on: {task.dependencies.join(', ')}</span>
+                    <span>Waits for: {task.dependencies.join(', ')}</span>
                   </div>
                 )}
               </div>

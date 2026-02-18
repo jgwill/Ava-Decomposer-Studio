@@ -1,9 +1,15 @@
+export type TaskType = 'research' | 'reasoning' | 'coding' | 'creative' | 'review';
+
 export interface DecompositionTask {
   id: string;
   title: string;
   description: string;
   dependencies: string[]; // IDs of tasks that must complete first
   estimatedComplexity: 'Low' | 'Medium' | 'High';
+  // v0.1.2 Enhanced Fields
+  taskType: TaskType;
+  recommendedTools?: string[]; // e.g., ["WebSearch", "Calculator", "VectorDB"]
+  reasoningStrategy?: string; // Brief note on how this task contributes to the whole
 }
 
 export interface DecompositionPlan {

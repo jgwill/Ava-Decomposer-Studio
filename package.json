@@ -13,10 +13,10 @@
     "react": "^19.2.4",
     "lucide-react": "^0.574.0",
     "@google/genai": "^1.41.0",
-    "ava-langgraph-prompt-decomposition-engine": "0.1.1",
+    "ava-langgraph-prompt-decomposition-engine": "0.1.2",
     "ava-langgraph-narrative-intelligence": "0.1.1",
     "ava-langchain-relational-intelligence": "0.1.1",
-    "ava-langchain-prompt-decomposition": "0.1.1",
+    "ava-langchain-prompt-decomposition": "0.1.2",
     "ava-langchain-narrative-tracing": "0.1.1"
   },
   "devDependencies": {
