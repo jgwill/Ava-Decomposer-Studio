@@ -1,0 +1,5 @@
+{
+  "name": "Ava-Decomposer-Studio",
+  "description": "A visual interface for the Ava LangGraph Prompt Decomposition Engine, allowing users to break down complex prompts into atomic, executable tasks using Gemini-powered reasoning.",
+  "requestFramePermissions": []
+}
