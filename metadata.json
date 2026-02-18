@@ -1,5 +1,5 @@
 {
-  "name": "Ava-Decomposer-Studio",
-  "description": "A visual interface for the Ava LangGraph Prompt Decomposition Engine, allowing users to break down complex prompts into atomic, executable tasks using Gemini-powered reasoning.",
+  "name": "Ava Decomposer Studio",
+  "description": "A comprehensive visual interface for the Ava Intelligence Suite, integrating LangGraph and LangChain modules for prompt decomposition, narrative intelligence, and relational mapping.",
   "requestFramePermissions": []
 }
