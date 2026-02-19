@@ -33,3 +33,14 @@ export interface ExecutionResult {
   startedAt?: number;
   completedAt?: number;
 }
+
+export interface Session {
+  id: string;
+  timestamp: string;
+  title: string;
+  prompt: string;
+  plan: DecompositionPlan | null;
+  executionResults: Record<string, ExecutionResult>;
+  selectedEngine: 'langgraph' | 'langchain';
+  lastModified: number;
+}

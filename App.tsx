@@ -6,6 +6,9 @@ import { DecompositionPlan, ExecutionResult, TaskStatus } from './types';
 import { PlanVisualization } from './components/PlanVisualization';
 import { ExecutionLog } from './components/ExecutionLog';
 import { ModuleStatus } from './components/ModuleStatus';
+import { SessionManager } from './components/SessionManager';
+import { ExportControls } from './components/ExportControls';
+import { useSessions } from './hooks/useSessions';
 
 const App: React.FC = () => {
   const [prompt, setPrompt] = useState<string>('');
@@ -18,6 +21,16 @@ const App: React.FC = () => {
   const [loadingModules, setLoadingModules] = useState(true);
   const [selectedEngine, setSelectedEngine] = useState<EngineType>('langgraph');
 
+  const { 
+    sessions, 
+    currentSessionId, 
+    createSession, 
+    updateSession, 
+    deleteSession, 
+    loadSession,
+    saveSession
+  } = useSessions();
+
   // Load modules on mount
   useEffect(() => {
     const initModules = async () => {
@@ -28,6 +41,59 @@ const App: React.FC = () => {
     initModules();
   }, []);
 
+  // Auto-save session when state changes
+  useEffect(() => {
+    if (currentSessionId) {
+      const timeoutId = setTimeout(() => {
+        updateSession(currentSessionId, {
+          prompt,
+          plan,
+          executionResults,
+          selectedEngine
+        });
+      }, 1000); // Debounce 1s
+      return () => clearTimeout(timeoutId);
+    }
+  }, [prompt, plan, executionResults, selectedEngine, currentSessionId]);
+
+  const handleLoadSession = (id: string) => {
+    const session = loadSession(id);
+    if (session) {
+      setPrompt(session.prompt);
+      setPlan(session.plan);
+      setExecutionResults(session.executionResults);
+      setSelectedEngine(session.selectedEngine);
+    }
+  };
+
+  const handleNewSession = () => {
+    setPrompt('');
+    setPlan(null);
+    setExecutionResults({});
+    setError(null);
+    // We don't explicitly clear currentSessionId here because createSession will set it, 
+    // or we can set it to null if we want "no session" state.
+    // But useSessions doesn't expose setSessionId directly. 
+    // Actually, if we want a fresh start, we should probably just let the user type and then create session on decompose, 
+    // OR create a blank session immediately.
+    // Let's just reset the local state. The useSessions hook keeps track of currentSessionId.
+    // We might need a way to "deselect" the session in the hook if we want to start fresh without overwriting the previous one immediately.
+    // For now, let's assume "New Session" just clears the UI. 
+    // If the user types and decomposes, we'll check if we should create a new session.
+    // Ideally, we should signal "no active session".
+    // I'll add a resetCurrentSession to useSessions or just handle it by logic.
+    // Since I can't easily change useSessions now without another edit, I'll just rely on logic:
+    // If I clear the prompt, I'm effectively starting over. 
+    // But wait, if I clear prompt and type, it will update the OLD session if currentSessionId is still set.
+    // I need to unset currentSessionId.
+    // I'll modify useSessions to expose a way to clear current session, or just reload the page? No.
+    // I'll assume I can't easily unset it with current hook interface.
+    // Let's look at useSessions again. It doesn't expose setCurrentSessionId.
+    // I should probably update useSessions to expose a "clearCurrentSession" or similar.
+    // But for now, I'll just create a NEW empty session immediately when "New Session" is clicked.
+    createSession('', null, {}, 'langgraph');
+  };
+
   const handleDecompose = async () => {
     if (!prompt.trim()) return;
     
@@ -36,9 +102,15 @@ const App: React.FC = () => {
     setPlan(null);
     setExecutionResults({});
     
+    // Create a session if one doesn't exist, or we are starting fresh
+    if (!currentSessionId) {
+      createSession(prompt, null, {}, selectedEngine);
+    }
+
     try {
       const newPlan = await decomposePrompt(prompt, selectedEngine);
       setPlan(newPlan);
+      // Session update will happen via useEffect
     } catch (e: any) {
       setError(e.message || "Failed to decompose prompt");
     } finally {
@@ -58,7 +130,6 @@ const App: React.FC = () => {
     }));
 
     // Build Context from all currently completed tasks
-    // We use a functional update pattern or read from the state variable which is a dependency
     const currentContext = Object.values(executionResults)
         .filter(r => r.status === TaskStatus.COMPLETED && r.output)
         .map(r => `[Output from Task ${r.taskId}]:\n${r.output}`)
@@ -150,6 +221,13 @@ const App: React.FC = () => {
             </h1>
           </div>
           <div className="flex items-center space-x-4">
+            <SessionManager 
+              sessions={sessions}
+              currentSessionId={currentSessionId}
+              onLoadSession={handleLoadSession}
+              onDeleteSession={deleteSession}
+              onNewSession={handleNewSession}
+            />
              <div className="hidden md:flex items-center space-x-2 px-3 py-1 rounded-md bg-gray-900/50 border border-gray-800">
               <BrainCircuit className="w-3.5 h-3.5 text-purple-400" />
               <span className="text-xs font-mono text-gray-400">
@@ -285,8 +363,11 @@ const App: React.FC = () => {
                     
                     {/* Execution & Visuals combined vertically since sidebar takes space */}
                     <div className="space-y-8">
-                        <div className="bg-gray-900/50 rounded-2xl p-6 border border-gray-800">
-                            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Engine Reasoning</h3>
+                        <div className="bg-gray-900/50 rounded-2xl p-6 border border-gray-800 relative">
+                            <div className="flex justify-between items-start mb-3">
+                                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Engine Reasoning</h3>
+                                <ExportControls plan={plan} executionResults={executionResults} prompt={prompt} />
+                            </div>
                             <p className="text-gray-300 leading-relaxed text-sm">
                                 {plan.reasoning}
                             </p>

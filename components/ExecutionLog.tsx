@@ -1,6 +1,7 @@
 import React from 'react';
 import { ExecutionResult, TaskStatus, DecompositionTask } from '../types';
-import { Terminal, Check, X, Loader2 } from 'lucide-react';
+import { Terminal, Check, X, Loader2, Download } from 'lucide-react';
+import { downloadFile, generateSafeFilename } from '../utils/exportUtils';
 
 interface ExecutionLogProps {
   results: Record<string, ExecutionResult>;
@@ -37,7 +38,19 @@ export const ExecutionLog: React.FC<ExecutionLogProps> = ({ results, tasks }) =>
                 <span className="text-xs font-mono text-gray-500">ID: {task.id}</span>
                 <span className="text-sm font-medium text-gray-300">{task.title}</span>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center space-x-2">
+                {result.status === TaskStatus.COMPLETED && result.output && (
+                  <button
+                    onClick={() => {
+                      const filename = generateSafeFilename(task.title, 'txt');
+                      downloadFile(result.output || '', filename, 'text/plain');
+                    }}
+                    className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors"
+                    title="Download Output"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 {result.status === TaskStatus.RUNNING && <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />}
                 {result.status === TaskStatus.COMPLETED && <Check className="w-4 h-4 text-green-400" />}
                 {result.status === TaskStatus.FAILED && <X className="w-4 h-4 text-red-400" />}
