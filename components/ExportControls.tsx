@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, FileText, FileCode } from 'lucide-react';
+import { FileText, FileCode } from 'lucide-react';
 import { DecompositionPlan, ExecutionResult } from '../types';
 import { formatPlanToMarkdown, formatPlanToJSON, generateSafeFilename, downloadFile } from '../utils/exportUtils';
 

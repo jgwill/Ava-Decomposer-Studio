@@ -1,7 +1,7 @@
 import React from 'react';
 import { DecompositionTask, TaskStatus, ExecutionResult, TaskType } from '../types';
 import { 
-  CheckCircle2, Circle, Clock, AlertCircle, ArrowDown, Cpu, 
+  CheckCircle2, Circle, AlertCircle, ArrowDown, Cpu, 
   Search, Brain, Code, PenTool, ClipboardCheck, Wrench, Play
 } from 'lucide-react';
 

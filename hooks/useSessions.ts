@@ -1,29 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Session, DecompositionPlan, ExecutionResult } from '../types';
-import { generateSessionId, generateSessionTitle, formatDate } from '../utils/exportUtils';
+import { generateSessionId, generateSessionTitle } from '../utils/exportUtils';
 
 const STORAGE_KEY = 'ava_sessions';
 
 export const useSessions = () => {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<Session[]>(() => {
+    const storedSessions = localStorage.getItem(STORAGE_KEY);
+    if (storedSessions) {
+      try {
+        return JSON.parse(storedSessions);
+      } catch {
+        console.error('Failed to parse sessions from localStorage');
+      }
+    }
+    return [];
+  });
 
-  useEffect(() => {
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(() => {
     const storedSessions = localStorage.getItem(STORAGE_KEY);
     if (storedSessions) {
       try {
         const parsed = JSON.parse(storedSessions);
-        setSessions(parsed);
         if (parsed.length > 0) {
-          setCurrentSessionId(parsed[0].id);
+          return parsed[0].id;
         }
-      } catch (e) {
-        console.error('Failed to parse sessions from localStorage', e);
+      } catch {
+        // Ignore
       }
     }
-  }, []);
+    return null;
+  });
 
-  const saveSession = (session: Session) => {
+  const saveSession = useCallback((session: Session) => {
     setSessions(prev => {
       const existingIndex = prev.findIndex(s => s.id === session.id);
       let newSessions;
@@ -36,9 +45,9 @@ export const useSessions = () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newSessions));
       return newSessions;
     });
-  };
+  }, []);
 
-  const createSession = (prompt: string, plan: DecompositionPlan | null, executionResults: Record<string, ExecutionResult>, selectedEngine: 'langgraph' | 'langchain'): Session => {
+  const createSession = useCallback((prompt: string, plan: DecompositionPlan | null, executionResults: Record<string, ExecutionResult>, selectedEngine: 'langgraph' | 'langchain'): Session => {
     const newSession: Session = {
       id: generateSessionId(),
       timestamp: new Date().toISOString(),
@@ -52,9 +61,9 @@ export const useSessions = () => {
     saveSession(newSession);
     setCurrentSessionId(newSession.id);
     return newSession;
-  };
+  }, [saveSession]);
 
-  const updateSession = (id: string, updates: Partial<Session>) => {
+  const updateSession = useCallback((id: string, updates: Partial<Session>) => {
     setSessions(prev => {
       const index = prev.findIndex(s => s.id === id);
       if (index === -1) return prev;
@@ -65,9 +74,9 @@ export const useSessions = () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newSessions));
       return newSessions;
     });
-  };
+  }, []);
 
-  const deleteSession = (id: string) => {
+  const deleteSession = useCallback((id: string) => {
     setSessions(prev => {
       const newSessions = prev.filter(s => s.id !== id);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newSessions));
@@ -76,16 +85,20 @@ export const useSessions = () => {
       }
       return newSessions;
     });
-  };
+  }, [currentSessionId]);
 
-  const loadSession = (id: string) => {
+  const loadSession = useCallback((id: string) => {
     const session = sessions.find(s => s.id === id);
     if (session) {
       setCurrentSessionId(id);
       return session;
     }
     return null;
-  };
+  }, [sessions]);
+
+  const clearCurrentSession = useCallback(() => {
+    setCurrentSessionId(null);
+  }, []);
 
   return {
     sessions,
@@ -94,6 +107,7 @@ export const useSessions = () => {
     updateSession,
     deleteSession,
     loadSession,
-    saveSession
+    saveSession,
+    clearCurrentSession
   };
 };

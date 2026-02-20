@@ -1,4 +1,4 @@
-import { DecompositionPlan, ExecutionResult, Session } from '../types';
+import { DecompositionPlan, ExecutionResult } from '../types';
 
 export const formatDate = (date: Date): string => {
   const yy = date.getFullYear().toString().slice(-2);

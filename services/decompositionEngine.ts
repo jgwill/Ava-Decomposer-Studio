@@ -109,7 +109,7 @@ export const loadAvaModules = async (): Promise<ModuleStatus[]> => {
 
   const results = await Promise.all(modules.map(async (mod) => {
     try {
-        // @ts-ignore
+        // @ts-expect-error Dynamic import of external module
         await import(mod.name);
         return { name: mod.name, status: 'active' as const, version: mod.version };
     } catch (e) {
@@ -128,7 +128,7 @@ export const decomposePrompt = async (prompt: string, engineType: EngineType = '
 
   try {
     // Attempt to use the installed package
-    // @ts-ignore
+    // @ts-expect-error Dynamic import of external module
     const module = await import(packageName);
     
     // Check if the expected engine class is exported

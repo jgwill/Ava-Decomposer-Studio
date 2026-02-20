@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Layers, Play, RefreshCw, Zap, Sparkles, Box, BrainCircuit, Share2, Workflow, Link as LinkIcon } from 'lucide-react';
+import { Layers, Play, RefreshCw, Zap, Sparkles, BrainCircuit, Share2, Workflow, Link as LinkIcon } from 'lucide-react';
 import { decomposePrompt, loadAvaModules, ModuleStatus as IModuleStatus, EngineType } from './services/decompositionEngine';
 import { executeTask } from './services/executionService';
 import { DecompositionPlan, ExecutionResult, TaskStatus } from './types';
@@ -28,7 +28,7 @@ const App: React.FC = () => {
     updateSession, 
     deleteSession, 
     loadSession,
-    saveSession
+    clearCurrentSession
   } = useSessions();
 
   // Load modules on mount
@@ -54,7 +54,7 @@ const App: React.FC = () => {
       }, 1000); // Debounce 1s
       return () => clearTimeout(timeoutId);
     }
-  }, [prompt, plan, executionResults, selectedEngine, currentSessionId]);
+  }, [prompt, plan, executionResults, selectedEngine, currentSessionId, updateSession]);
 
   const handleLoadSession = (id: string) => {
     const session = loadSession(id);
@@ -71,27 +71,7 @@ const App: React.FC = () => {
     setPlan(null);
     setExecutionResults({});
     setError(null);
-    // We don't explicitly clear currentSessionId here because createSession will set it, 
-    // or we can set it to null if we want "no session" state.
-    // But useSessions doesn't expose setSessionId directly. 
-    // Actually, if we want a fresh start, we should probably just let the user type and then create session on decompose, 
-    // OR create a blank session immediately.
-    // Let's just reset the local state. The useSessions hook keeps track of currentSessionId.
-    // We might need a way to "deselect" the session in the hook if we want to start fresh without overwriting the previous one immediately.
-    // For now, let's assume "New Session" just clears the UI. 
-    // If the user types and decomposes, we'll check if we should create a new session.
-    // Ideally, we should signal "no active session".
-    // I'll add a resetCurrentSession to useSessions or just handle it by logic.
-    // Since I can't easily change useSessions now without another edit, I'll just rely on logic:
-    // If I clear the prompt, I'm effectively starting over. 
-    // But wait, if I clear prompt and type, it will update the OLD session if currentSessionId is still set.
-    // I need to unset currentSessionId.
-    // I'll modify useSessions to expose a way to clear current session, or just reload the page? No.
-    // I'll assume I can't easily unset it with current hook interface.
-    // Let's look at useSessions again. It doesn't expose setCurrentSessionId.
-    // I should probably update useSessions to expose a "clearCurrentSession" or similar.
-    // But for now, I'll just create a NEW empty session immediately when "New Session" is clicked.
-    createSession('', null, {}, 'langgraph');
+    clearCurrentSession();
   };
 
   const handleDecompose = async () => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, CheckCircle2, XCircle, Loader2, Activity } from 'lucide-react';
+import { XCircle, Loader2, Activity } from 'lucide-react';
 import { ModuleStatus as IModuleStatus } from '../services/decompositionEngine';
 
 interface ModuleStatusProps {
