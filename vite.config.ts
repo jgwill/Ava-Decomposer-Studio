@@ -21,7 +21,16 @@ export default defineConfig(({ mode }) => {
       },
       build: {
         rollupOptions: {
-          external: ['fs', 'path', 'util', 'stream', 'buffer', 'worker_threads', 'fs/promises'],
+          external: [
+            'fs', 
+            'path', 
+            'util', 
+            'stream', 
+            'buffer', 
+            'worker_threads', 
+            'fs/promises',
+            '@langchain/langgraph'
+          ],
         }
       }
     };
