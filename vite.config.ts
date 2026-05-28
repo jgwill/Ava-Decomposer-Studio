@@ -18,6 +18,11 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        rollupOptions: {
+          external: ['fs', 'path', 'util', 'stream', 'buffer', 'worker_threads', 'fs/promises'],
+        }
       }
     };
 });

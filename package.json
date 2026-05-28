@@ -11,14 +11,14 @@
   },
   "dependencies": {
     "@google/genai": "^1.41.0",
-    "ava-langchain-inquiry-routing": "^0.1.1",
-    "ava-langchain-narrative-tracing": "0.1.2",
-    "ava-langchain-prompt-decomposition": "0.1.6",
-    "ava-langchain-relational-intelligence": "0.1.3",
-    "ava-langchain-state-machine-spec": "^0.1.2",
-    "ava-langgraph-inquiry-routing-engine": "^0.1.1",
-    "ava-langgraph-narrative-intelligence": "^0.1.2",
-    "ava-langgraph-prompt-decomposition-engine": "0.1.5",
+    "ava-langchain-inquiry-routing": "file:../../avadisabelle/ava-langchainjs/libs/inquiry-routing",
+    "ava-langchain-narrative-tracing": "file:../../avadisabelle/ava-langchainjs/libs/narrative-tracing",
+    "ava-langchain-prompt-decomposition": "file:../../avadisabelle/ava-langchainjs/libs/prompt-decomposition",
+    "ava-langchain-relational-intelligence": "file:../../avadisabelle/ava-langchainjs/libs/relational-intelligence",
+    "ava-langchain-state-machine-spec": "file:../../avadisabelle/ava-langchainjs/libs/state-machine-spec",
+    "ava-langgraph-inquiry-routing-engine": "file:../../avadisabelle/ava-langgraphjs/libs/inquiry-routing-engine",
+    "ava-langgraph-narrative-intelligence": "file:../../avadisabelle/ava-langgraphjs/libs/narrative-intelligence",
+    "ava-langgraph-prompt-decomposition-engine": "file:../../avadisabelle/ava-langgraphjs/libs/prompt-decomposition-engine",
     "lucide-react": "^0.574.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
@@ -28,13 +28,19 @@
     "@typescript-eslint/eslint-plugin": "^8.56.0",
     "@typescript-eslint/parser": "^8.56.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "browserify-fs": "^1.0.0",
+    "buffer": "^6.0.3",
     "eslint": "^9.39.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.0",
     "globals": "^17.3.0",
+    "path-browserify": "^1.0.1",
+    "stream-browserify": "^3.0.0",
     "typescript": "~5.8.2",
     "typescript-eslint": "^8.56.0",
-    "vite": "^6.2.0"
+    "util": "^0.12.5",
+    "vite": "^6.2.0",
+    "vite-plugin-node-polyfills": "^0.28.0"
   }
 }

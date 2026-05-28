@@ -96,21 +96,34 @@ const fallbackDecompose = async (prompt: string, engineType: EngineType): Promis
 };
 
 /**
+ * Static map of Ava modules to satisfy Vite's analysis requirements.
+ * Vite cannot analyze dynamic imports with variables, so we must use literal strings.
+ */
+const engineModules: Record<string, () => Promise<any>> = {
+  'ava-langgraph-prompt-decomposition-engine': () => import('ava-langgraph-prompt-decomposition-engine'),
+  'ava-langchain-prompt-decomposition': () => import('ava-langchain-prompt-decomposition'),
+  'ava-langgraph-narrative-intelligence': () => import('ava-langgraph-narrative-intelligence'),
+  'ava-langchain-relational-intelligence': () => import('ava-langchain-relational-intelligence'),
+  'ava-langchain-narrative-tracing': () => import('ava-langchain-narrative-tracing'),
+};
+
+/**
  * loads all Ava modules and reports their status
  */
 export const loadAvaModules = async (): Promise<ModuleStatus[]> => {
   const modules = [
-    { name: 'ava-langgraph-prompt-decomposition-engine', version: '0.1.2' },
-    { name: 'ava-langchain-prompt-decomposition', version: '0.1.2' },
-    { name: 'ava-langgraph-narrative-intelligence', version: '0.1.1' },
-    { name: 'ava-langchain-relational-intelligence', version: '0.1.1' },
-    { name: 'ava-langchain-narrative-tracing', version: '0.1.1' }
+    { name: 'ava-langgraph-prompt-decomposition-engine', version: '0.1.6' },
+    { name: 'ava-langchain-prompt-decomposition', version: '0.1.7' },
+    { name: 'ava-langgraph-narrative-intelligence', version: '0.1.2' },
+    { name: 'ava-langchain-relational-intelligence', version: '0.1.3' },
+    { name: 'ava-langchain-narrative-tracing', version: '0.1.2' }
   ];
 
   const results = await Promise.all(modules.map(async (mod) => {
     try {
-        // @ts-expect-error Dynamic import of external module
-        await import(mod.name);
+        const importFn = engineModules[mod.name as keyof typeof engineModules];
+        if (!importFn) throw new Error(`Module ${mod.name} not found in static map`);
+        await importFn();
         return { name: mod.name, status: 'active' as const, version: mod.version };
     } catch (e) {
         console.warn(`Failed to load ${mod.name}`, e);
@@ -127,9 +140,11 @@ export const decomposePrompt = async (prompt: string, engineType: EngineType = '
     : "ava-langchain-prompt-decomposition";
 
   try {
-    // Attempt to use the installed package
-    // @ts-expect-error Dynamic import of external module
-    const module = await import(packageName);
+    // Attempt to use the installed package via static map
+    const importFn = engineModules[packageName as keyof typeof engineModules];
+    if (!importFn) throw new Error(`Engine ${packageName} not found in static map`);
+    
+    const module = await importFn();
     
     // Check if the expected engine class is exported
     // Fallback to DecompositionGraph if default is not available
@@ -144,7 +159,15 @@ export const decomposePrompt = async (prompt: string, engineType: EngineType = '
         
         return {
           originalPrompt: prompt,
-          tasks: result.tasks,
+          tasks: result.tasks || result.actionStack.map((a: any) => ({
+            id: a.id,
+            title: a.text,
+            description: a.text,
+            dependencies: a.dependency ? [a.dependency] : [],
+            estimatedComplexity: "Medium",
+            taskType: "reasoning",
+            reasoningStrategy: a.direction
+          })),
           reasoning: result.reasoning || `Processed by ${engineType} Engine`
         };
     }
